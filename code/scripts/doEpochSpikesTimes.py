@@ -41,6 +41,9 @@ def main(argv):
     parser.add_argument("--clusters_labels_var_name",
                         help="clusters labels variable name",
                         type=str, default="clusters_labels")
+    parser.add_argument("--cell_id_var_name",
+                        help="cell id variable name",
+                        type=str, default="cell_id")
     parser.add_argument("--lottery_magnitude_var_name",
                         help="lottery magnitude variable name",
                         type=str, default="lottery_magnitude")
@@ -68,7 +71,7 @@ def main(argv):
     parser.add_argument("--mat_data_filename_pattern",
                         help="mat data filename pattern",
                         type=str,
-                        default="../../../data/risky_choice_data/risky_{:d}_unpacked_for_python.mat")
+                        default="../../data/risky_choice_data/risky_{:d}_unpacked_for_python.mat")
     parser.add_argument("--epoched_spikes_filename_pattern",
                         help="filename containing the epoched spikes",
                         type=str,
@@ -77,6 +80,7 @@ def main(argv):
 
     session_id = args.session_id
     clusters_types = args.clusters_types.split(",")
+    cell_id_var_name = args.cell_id_var_name
     spikes_times_var_name = args.spikes_times_var_name
     epoch_var_name = args.epoch_var_name
     clusters_labels_var_name = args.clusters_labels_var_name
@@ -99,8 +103,11 @@ def main(argv):
     epoch_times = mat_data[epoch_var_name]
     clusters_labels = [mat_data[clusters_labels_var_name][i,0][0] \
                        for i in range(mat_data[clusters_labels_var_name].shape[0])]
+    cell_ids = mat_data[cell_id_var_name]
+
     valid_clusters_indices = [i for i in range(len(clusters_labels)) if clusters_labels[i] in clusters_types]
     valid_spikes_times = spikes_times[0, valid_clusters_indices]
+    valid_cell_ids = cell_ids[valid_clusters_indices]
     epoched_spikes_times = separateNeuronsSpikeTimesByTrials(
         neurons_spike_times=valid_spikes_times, epochs_times=epoch_times,
         epochs_start_times=epoch_times+epoch_start_offset,
@@ -112,7 +119,9 @@ def main(argv):
     rt_choice = mat_data[rt_choice_var_name]
     rt_fixation = mat_data[rt_fixation_var_name]
     results_to_save = {"spikes_times": epoched_spikes_times,
-                       "clusters_indices": valid_clusters_indices,
+                       "epoch_start_offset": epoch_start_offset,
+                       "epoch_end_offset": epoch_end_offset,
+                       "cell_ids": valid_cell_ids,
                        "lottery_magnitude": lottery_magnitude,
                        "surebet_magnitude": surebet_magnitude,
                        "choice_bino": choice_bino,
