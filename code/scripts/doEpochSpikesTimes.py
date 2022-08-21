@@ -103,7 +103,7 @@ def main(argv):
     epoch_times = mat_data[epoch_var_name]
     clusters_labels = [mat_data[clusters_labels_var_name][i,0][0] \
                        for i in range(mat_data[clusters_labels_var_name].shape[0])]
-    cell_ids = mat_data[cell_id_var_name]
+    cell_ids = mat_data[cell_id_var_name].squeeze()
 
     valid_clusters_indices = [i for i in range(len(clusters_labels)) if clusters_labels[i] in clusters_types]
     valid_spikes_times = spikes_times[0, valid_clusters_indices]
