@@ -86,11 +86,10 @@ def main(argv):
     while estPrefixUsed:
         estResNumber = random.randint(0, 10**8)
         estimResMetaDataFilename = \
-            "../results/{:08d}_estimation_metaData.ini".format(estResNumber)
+            estimRes_metadata_filename_pattern.format(estResNumber)
         if not os.path.exists(estimResMetaDataFilename):
             estPrefixUsed = False
-    modelSaveFilename = "../results/{:08d}_estimatedModel.pickle".\
-        format(estResNumber)
+    modelSaveFilename = modelSaveFilenamePattrn.format(estResNumber)
 
     # build kernels
     kernels = svGPFA.utils.miscUtils.buildKernels(
@@ -121,9 +120,6 @@ def main(argv):
     # save estimated values
     estimResConfig = configparser.ConfigParser()
     estimResConfig["optim_params"] = optim_params
-    estimResConfig["estimation_params"] = {
-        "est_init_number": est_init_number,
-    }
     with open(estimResMetaDataFilename, "w") as f:
         estimResConfig.write(f)
 
