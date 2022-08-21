@@ -81,7 +81,7 @@ def main(argv):
     optim_method = optim_params["optim_method"]
     prior_cov_reg_param = optim_params["prior_cov_reg_param"]
 
-    # build modelSaveFilename
+    # build model_save_filename
     estPrefixUsed = True
     while estPrefixUsed:
         estResNumber = random.randint(0, 10**8)
@@ -89,7 +89,7 @@ def main(argv):
             estimRes_metadata_filename_pattern.format(estResNumber)
         if not os.path.exists(estimResMetaDataFilename):
             estPrefixUsed = False
-    modelSaveFilename = modelSaveFilenamePattrn.format(estResNumber)
+    model_save_filename = model_save_filename_pattern.format(estResNumber)
 
     # build kernels
     kernels = svGPFA.utils.miscUtils.buildKernels(
@@ -128,9 +128,9 @@ def main(argv):
                      "terminationInfo": terminationInfo,
                      "iterationModelParams": iterationsModelParams,
                      "model": model}
-    with open(modelSaveFilename, "wb") as f:
+    with open(model_save_filename, "wb") as f:
         pickle.dump(resultsToSave, f)
-    print("Saved results to {:s}".format(modelSaveFilename))
+    print("Saved results to {:s}".format(model_save_filename))
 
 
 if __name__ == "__main__":
