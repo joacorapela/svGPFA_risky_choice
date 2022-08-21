@@ -67,14 +67,22 @@ def main(argv):
                      for n in range(n_neurons)] for r in range(n_trials)]
 
     # build initial parameters
+    #    build dynamic parameters
+    args_info = svGPFA.utils.initUtils.getArgsInfo()
+    dynamic_params = svGPFA.utils.initUtils.getParamsDictFromArgs(
+        n_latents=n_latents, n_trials=n_trials, args=vars(args),
+        args_info=args_info)
+    #    build configuration default parameters
     default_params = svGPFA.utils.initUtils.getDefaultParamsDict(
         n_neurons=n_neurons, n_trials=n_trials, n_latents=n_latents,
         trials_start_time=trials_start_time, trials_end_time=trials_end_time,
         em_max_iter=em_max_iter)
+    #    finally, extract initial parameters from the dynamic
+    #    and default parameters
     initial_params, quad_params, kernels_types, optim_params = \
         svGPFA.utils.initUtils.getParams(
             n_trials=n_trials, n_neurons=n_neurons,
-            dynamic_params=None,
+            dynamic_params=dynamic_params,
             config_file_params=None,
             default_params=default_params)
     kernels_params0 = initial_params["svPosteriorOnLatents"]["kernelsMatricesStore"]["kernelsParams0"]
