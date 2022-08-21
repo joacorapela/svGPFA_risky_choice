@@ -1,5 +1,6 @@
 *~
 *.swp
+*Rsync
 data/*
 figures/*
 results/*
