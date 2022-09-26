@@ -2,5 +2,7 @@
 *.swp
 *Rsync
 data/*
+doc/*
+slurm/*
 figures/*
 results/*
