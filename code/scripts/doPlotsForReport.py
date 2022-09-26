@@ -8,7 +8,6 @@ import argparse
 import configparser
 import pandas as pd
 import sklearn.metrics
-# import statsmodels.tsa.stattools
 
 import gcnu_common.utils.neuralDataAnalysis
 import gcnu_common.stats.pointProcesses.tests
@@ -95,7 +94,7 @@ def main(argv):
     epoched_spikes_filename = args.epoched_spikes_filename_pattern.format(session_id)
     estimResMetaDataFilename = "../../results/{:08d}_estimation_metaData.ini".format(estResNumber)
     modelSaveFilename = "../../results/{:08d}_estimatedModel.pickle".format(estResNumber)
-    lowerBoundHistVsIterNoFigFilenamePattern = "../../figures/{:08d}_lowerBoundHistVSIterNo.{{:s}}".format(estResNumber)
+    lowerBoundHistVsIterNoFigFilenamePattern = "../../figures/{:08d}_lowerBoundHistVsIterNo.{{:s}}".format(estResNumber)
     lowerBoundHistVsElapsedTimeFigFilenamePattern = "../../figures/{:08d}_lowerBoundHistVsElapsedTime.{{:s}}".format(estResNumber)
     latentsFigFilenamePattern = "../../figures/{:08d}_estimatedLatent_latent{:03d}.{{:s}}".format(estResNumber, latent_to_plot)
     orthonormalizedLatentsFigFilenamePattern = "../../figures/{:08d}_orthonormalized_estimatedLatent_latent{:03d}.{{:s}}".format(estResNumber, latent_to_plot)
@@ -104,7 +103,7 @@ def main(argv):
     embeddingsFigFilenamePattern = "../../figures/{:08d}_estimatedEmbedding_neuron{:d}.{{:s}}".format(estResNumber, neuron_to_plot)
     embeddingParamsFigFilenamePattern = "../../figures/{:08d}_estimatedEmbeddingParams.{{:s}}".format(estResNumber)
     CIFFigFilenamePattern = "../../figures/{:08d}_CIF_trial{:03d}_neuron{:d}.{{:s}}".format(estResNumber, trial_to_plot, neuron_to_plot)
-    CIFimageFigFilenamePattern = "../../figures/{:08d}_CIFimage_neuron{:d}.{{:s}}".format(estResNumber, neuron_to_plot)
+    CIFsOneNeuronAllTrialsFigFilenamePattern = "../../figures/{:08d}_CIFsAllTrials_neuron{:d}.{{:s}}".format(estResNumber, neuron_to_plot)
     ksTestTimeRescalingNumericalCorrectionFigFilenamePattern = "../../figures/{:08d}_ksTestTimeRescaling_numericalCorrection_trial{:03d}_neuron{:d}.{{:s}}".format(estResNumber, trial_to_plot, neuron_to_plot)
     rocFigFilenamePattern = "../../figures/{:08d}_rocAnalysis_trial{:03d}_neuron{:d}.{{:s}}".format(estResNumber, trial_to_plot, neuron_to_plot)
     kernelsParamsFigFilenamePattern = "../../figures/{:08d}_estimatedKernelsParams.{{:s}}".format(estResNumber)
@@ -270,8 +269,8 @@ def main(argv):
         # sort_event=sideIn_times, align_event=centerOut_times, marked_events=marked_events,
         trials_colors=trials_colors,
         title=title)
-    fig.write_image(CIFimageFigFilenamePattern.format("png"))
-    fig.write_html(CIFimageFigFilenamePattern.format("html"))
+    fig.write_image(CIFsOneNeuronAllTrialsFigFilenamePattern.format("png"))
+    fig.write_html(CIFsOneNeuronAllTrialsFigFilenamePattern.format("html"))
 
     # plot KS test time rescaling (numerical correction)
     diffECDFsX, diffECDFsY, estECDFx, estECDFy, simECDFx, simECDFy, cb = \
