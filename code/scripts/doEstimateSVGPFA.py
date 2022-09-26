@@ -83,7 +83,6 @@ def main(argv):
         svGPFA.utils.initUtils.getParams(
             n_trials=n_trials, n_neurons=n_neurons,
             dynamic_params=dynamic_params,
-            config_file_params=None,
             default_params=default_params)
     kernels_params0 = initial_params["svPosteriorOnLatents"]["kernelsMatricesStore"]["kernelsParams0"]
     optim_method = optim_params["optim_method"]
