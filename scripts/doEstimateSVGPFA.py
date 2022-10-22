@@ -4,6 +4,7 @@ import random
 import pickle
 import argparse
 import configparser
+import numpy as np
 import torch
 
 import gcnu_common.utils.config_dict
@@ -22,6 +23,8 @@ def main(argv):
                         default=256511)
     parser.add_argument("--n_latents", help="number of latent variables",
                         type=int, default=3)
+    parser.add_argument("--max_rt_fixation", help="maximum fixation reaction "
+                        "time (sec)", type=float, default=5.0)
     parser.add_argument("--trials_start_time", help="trials_start_time",
                         type=float, default=-1.0)
     parser.add_argument("--trials_end_time", help="trials_end time",
@@ -31,21 +34,22 @@ def main(argv):
     parser.add_argument("--epoched_spikes_filename_pattern",
                         help="filename containing the epoched spikes",
                         type=str,
-                        default="../../results/risky_{:d}_epoched_spikes.pickle")
+                        default="../results/risky_{:d}_epoched_spikes.pickle")
     parser.add_argument("--model_save_filename_pattern",
                         help="model save filename pattern",
                         type=str,
-                        default="../../results/{:08d}_estimatedModel.pickle")
+                        default="../results/{:08d}_estimatedModel.pickle")
     parser.add_argument("--estimRes_metadata_filename_pattern",
                         help="estimation result metadata filename pattern",
                         type=str,
-                        default="../../results/{:08d}_estimation_metaData.ini")
+                        default="../results/{:08d}_estimation_metaData.ini")
 
     args, remaining = parser.parse_known_args()
     gcnu_common.utils.argparse.add_remaining_to_populated_args(
         populated=args, remaining=remaining)
     session_id = args.session_id
     n_latents = args.n_latents
+    max_rt_fixation = args.max_rt_fixation
     trials_start_time = args.trials_start_time
     trials_end_time = args.trials_end_time
     em_max_iter = args.em_max_iter
@@ -59,6 +63,19 @@ def main(argv):
     with open(epoched_spikes_filename, "rb") as f:
         loadRes = pickle.load(f)
     spikes_times = loadRes["spikes_times"]
+    trials_start_times = loadRes["trials_start_times"]
+    trials_end_times = loadRes["trials_end_times"]
+    rt_fixation = loadRes["rt_fixation"]
+
+    # begin exclude trials with rt_fixation lonter than max_rt_fixation
+    valid_trials_indices = np.where(rt_fixation < max_rt_fixation)[0]
+    print("Removed {:d} trials out of {:d} trials".format(
+        len(rt_fixation)-len(valid_trials_indices), len(rt_fixation)))
+    spikes_times = [spikes_times[i] for i in valid_trials_indices]
+    trials_start_times = trials_start_times[valid_trials_indices]
+    trials_end_times = trials_end_times[valid_trials_indices]
+    # end exclude trials with rt_fixation lonter than max_rt_fixation
+
     n_trials = len(spikes_times)
     n_neurons = len(spikes_times[0])
 
@@ -68,9 +85,14 @@ def main(argv):
 
     # build initial parameters
     #    build dynamic parameters
+    args = vars(args)
+    args["trials_start_times"] = np.array2string(trials_start_times[:, 0],
+                                                 separator=",")
+    args["trials_end_times"] = np.array2string(trials_end_times[:, 0],
+                                               separator=",")
     args_info = svGPFA.utils.initUtils.getArgsInfo()
     dynamic_params = svGPFA.utils.initUtils.getParamsDictFromArgs(
-        n_latents=n_latents, n_trials=n_trials, args=vars(args),
+        n_latents=n_latents, n_trials=n_trials, args=args,
         args_info=args_info)
     #    build configuration default parameters
     default_params = svGPFA.utils.initUtils.getDefaultParamsDict(
@@ -79,14 +101,13 @@ def main(argv):
         em_max_iter=em_max_iter)
     #    finally, extract initial parameters from the dynamic
     #    and default parameters
-    initial_params, quad_params, kernels_types, optim_params = \
-        svGPFA.utils.initUtils.getParams(
-            n_trials=n_trials, n_neurons=n_neurons,
-            dynamic_params=dynamic_params,
-            default_params=default_params)
-    kernels_params0 = initial_params["svPosteriorOnLatents"]["kernelsMatricesStore"]["kernelsParams0"]
-    optim_method = optim_params["optim_method"]
-    prior_cov_reg_param = optim_params["prior_cov_reg_param"]
+    params, kernels_types = svGPFA.utils.initUtils.getParamsAndKernelsTypes(
+        n_trials=n_trials, n_neurons=n_neurons, n_latents=n_latents,
+        dynamic_params=dynamic_params,
+        default_params=default_params)
+    kernels_params0 = params["initial_params"]["posterior_on_latents"]["kernels_matrices_store"]["kernels_params0"]
+    optim_method = params["optim_params"]["optim_method"]
+    prior_cov_reg_param = params["optim_params"]["prior_cov_reg_param"]
 
     # build model_save_filename
     estPrefixUsed = True
@@ -114,19 +135,19 @@ def main(argv):
 
     model.setInitialParamsAndData(
         measurements=spikes_times,
-        initialParams=initial_params,
-        eLLCalculationParams=quad_params,
+        initialParams=params["initial_params"],
+        eLLCalculationParams=params["quad_params"],
         priorCovRegParam=prior_cov_reg_param)
 
     # maximize lower bound
     svEM = svGPFA.stats.svEM.SVEM_PyTorch()
     lowerBoundHist, elapsedTimeHist, terminationInfo, iterationsModelParams = \
-        svEM.maximize(model=model, optim_params=optim_params,
+        svEM.maximize(model=model, optim_params=params["optim_params"],
                       method=optim_method)
 
     # save estimated values
     estimResConfig = configparser.ConfigParser()
-    estimResConfig["optim_params"] = optim_params
+    estimResConfig["optim_params"] = params["optim_params"]
     with open(estimResMetaDataFilename, "w") as f:
         estimResConfig.write(f)
 
@@ -134,7 +155,8 @@ def main(argv):
                      "elapsedTimeHist": elapsedTimeHist,
                      "terminationInfo": terminationInfo,
                      "iterationModelParams": iterationsModelParams,
-                     "model": model}
+                     "model": model,
+                     "valid_trials_indices": valid_trials_indices}
     with open(model_save_filename, "wb") as f:
         pickle.dump(resultsToSave, f)
     print("Saved results to {:s}".format(model_save_filename))
